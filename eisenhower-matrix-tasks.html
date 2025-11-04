@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrice d'Eisenhower - Gestionnaire de Tâches</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 0;
+            min-height: 600px;
+        }
+
+        .task-input-section {
+            background: #f8f9fa;
+            padding: 30px;
+            border-right: 2px solid #e0e0e0;
+        }
+
+        .task-input-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        #addTaskBtn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        #addTaskBtn:hover {
+            transform: translateY(-2px);
+        }
+
+        #taskList {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            cursor: move;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .task-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .task-item.dragging {
+            opacity: 0.5;
+        }
+
+        .matrix-section {
+            padding: 30px;
+        }
+
+        .matrix-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5em;
+        }
+
+        .matrix-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            height: 100%;
+        }
+
+        .quadrant {
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 250px;
+            position: relative;
+            transition: all 0.3s;
+        }
+
+        .quadrant.drag-over {
+            background: #f0f0f0;
+            border-color: #667eea;
+            transform: scale(1.02);
+        }
+
+        .quadrant-header {
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid;
+            font-size: 1.1em;
+        }
+
+        .urgent-important {
+            background: #ffebee;
+            border-color: #ef5350;
+        }
+
+        .urgent-important .quadrant-header {
+            color: #c62828;
+            border-color: #ef5350;
+        }
+
+        .not-urgent-important {
+            background: #e8f5e9;
+            border-color: #66bb6a;
+        }
+
+        .not-urgent-important .quadrant-header {
+            color: #2e7d32;
+            border-color: #66bb6a;
+        }
+
+        .urgent-not-important {
+            background: #fff3e0;
+            border-color: #ffa726;
+        }
+
+        .urgent-not-important .quadrant-header {
+            color: #e65100;
+            border-color: #ffa726;
+        }
+
+        .not-urgent-not-important {
+            background: #f3e5f5;
+            border-color: #ab47bc;
+        }
+
+        .not-urgent-not-important .quadrant-header {
+            color: #6a1b9a;
+            border-color: #ab47bc;
+        }
+
+        .matrix-task {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .matrix-task.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .task-content {
+            flex: 1;
+            word-break: break-word;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .complete-btn, .delete-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.2s;
+        }
+
+        .complete-btn {
+            background: #4caf50;
+            color: white;
+        }
+
+        .complete-btn:hover {
+            background: #45a049;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #da190b;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* Scrollbar personnalisée */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .task-input-section {
+                border-right: none;
+                border-bottom: 2px solid #e0e0e0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .matrix-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Matrice d'Eisenhower</h1>
+            <p>Organisez vos tâches par urgence et importance</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Section de saisie des tâches -->
+            <div class="task-input-section">
+                <h2>📝 Nouvelles tâches</h2>
+                <div class="input-group">
+                    <input type="text" id="taskInput" placeholder="Entrez une nouvelle tâche..." />
+                    <button id="addTaskBtn">Ajouter</button>
+                </div>
+                <div id="taskList"></div>
+            </div>
+
+            <!-- Matrice d'Eisenhower -->
+            <div class="matrix-section">
+                <h2>Matrice d'Eisenhower</h2>
+                <div class="matrix-grid">
+                    <div class="quadrant urgent-important" data-quadrant="urgent-important">
+                        <div class="quadrant-header">🔴 Urgent & Important<br><small>À faire immédiatement</small></div>
+                        <div class="quadrant-tasks"></div>
+                    </div>
+                    <div class="quadrant not-urgent-important" data-quadrant="not-urgent-important">
+                        <div class="quadrant-header">🟢 Pas Urgent & Important<br><small>À planifier</small></div>
+                        <div class="quadrant-tasks"></div>
+                    </div>
+                    <div class="quadrant urgent-not-important" data-quadrant="urgent-not-important">
+                        <div class="quadrant-header">🟡 Urgent & Pas Important<br><small>À déléguer</small></div>
+                        <div class="quadrant-tasks"></div>
+                    </div>
+                    <div class="quadrant not-urgent-not-important" data-quadrant="not-urgent-not-important">
+                        <div class="quadrant-header">🟣 Pas Urgent & Pas Important<br><small>À éliminer</small></div>
+                        <div class="quadrant-tasks"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // État de l'application
+        let tasks = [];
+        let taskIdCounter = 0;
+
+        // Éléments DOM
+        const taskInput = document.getElementById('taskInput');
+        const addTaskBtn = document.getElementById('addTaskBtn');
+        const taskList = document.getElementById('taskList');
+        const quadrants = document.querySelectorAll('.quadrant');
+
+        // Ajouter une tâche
+        function addTask() {
+            const taskText = taskInput.value.trim();
+            if (taskText === '') return;
+
+            const task = {
+                id: taskIdCounter++,
+                text: taskText,
+                quadrant: null,
+                completed: false
+            };
+
+            tasks.push(task);
+            taskInput.value = '';
+            renderTaskList();
+        }
+
+        // Afficher la liste des tâches
+        function renderTaskList() {
+            const unassignedTasks = tasks.filter(t => t.quadrant === null);
+            
+            if (unassignedTasks.length === 0) {
+                taskList.innerHTML = '<div class="empty-state">Aucune tâche en attente.<br>Ajoutez-en une ci-dessus !</div>';
+                return;
+            }
+
+            taskList.innerHTML = unassignedTasks.map(task => `
+                <div class="task-item" draggable="true" data-task-id="${task.id}">
+                    ${task.text}
+                </div>
+            `).join('');
+
+            // Ajouter les événements de drag pour les nouvelles tâches
+            document.querySelectorAll('.task-item').forEach(item => {
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+            });
+        }
+
+        // Gestion du drag & drop
+        let draggedTaskId = null;
+
+        function handleDragStart(e) {
+            draggedTaskId = parseInt(e.target.dataset.taskId);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDragEnter(e) {
+            if (e.target.classList.contains('quadrant')) {
+                e.target.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            if (e.target.classList.contains('quadrant')) {
+                e.target.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const quadrant = e.target.closest('.quadrant');
+            if (!quadrant) return;
+
+            quadrant.classList.remove('drag-over');
+            const quadrantType = quadrant.dataset.quadrant;
+
+            // Mettre à jour la tâche
+            const task = tasks.find(t => t.id === draggedTaskId);
+            if (task) {
+                task.quadrant = quadrantType;
+                renderTaskList();
+                renderMatrix();
+            }
+        }
+
+        // Afficher la matrice
+        function renderMatrix() {
+            quadrants.forEach(quadrant => {
+                const quadrantType = quadrant.dataset.quadrant;
+                const tasksContainer = quadrant.querySelector('.quadrant-tasks');
+                const quadrantTasks = tasks.filter(t => t.quadrant === quadrantType);
+
+                if (quadrantTasks.length === 0) {
+                    tasksContainer.innerHTML = '<div class="empty-state">Glissez des tâches ici</div>';
+                    return;
+                }
+
+                tasksContainer.innerHTML = quadrantTasks.map(task => `
+                    <div class="matrix-task ${task.completed ? 'completed' : ''}" data-task-id="${task.id}">
+                        <div class="task-content">${task.text}</div>
+                        <div class="task-actions">
+                            ${!task.completed ? `<button class="complete-btn" onclick="completeTask(${task.id})">✓</button>` : ''}
+                            <button class="delete-btn" onclick="deleteTask(${task.id})">✕</button>
+                        </div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // Compléter une tâche
+        function completeTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = true;
+                renderMatrix();
+            }
+        }
+
+        // Supprimer une tâche
+        function deleteTask(taskId) {
+            tasks = tasks.filter(t => t.id !== taskId);
+            renderMatrix();
+        }
+
+        // Événements
+        addTaskBtn.addEventListener('click', addTask);
+        taskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        quadrants.forEach(quadrant => {
+            quadrant.addEventListener('dragover', handleDragOver);
+            quadrant.addEventListener('dragenter', handleDragEnter);
+            quadrant.addEventListener('dragleave', handleDragLeave);
+            quadrant.addEventListener('drop', handleDrop);
+        });
+
+        // Initialisation
+        renderTaskList();
+        renderMatrix();
+    </script>
+</body>
+</html>
